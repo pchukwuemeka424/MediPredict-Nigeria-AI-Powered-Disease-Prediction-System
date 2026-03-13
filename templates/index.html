@@ -158,6 +158,22 @@
                     </div>
                 </div>
 
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Subscribe to Health Tips</h2>
+                        <p class="card-text">Get weekly health tips and updates delivered to your email:</p>
+                        
+                        <form id="subscribe-form">
+                            <div class="mb-3">
+                                <input type="email" id="email-input" name="email" class="form-control" placeholder="Enter your email address" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+                        </form>
+                        
+                        <div id="subscribe-message" class="mt-3"></div>
+                    </div>
+                </div>
+
                 <div id="result-section" class="card">
                     <div class="card-body">
                         <h2 class="card-title">Diagnosis Results</h2>
@@ -423,6 +439,48 @@
             $('#new-prediction-btn').on('click', function() {
                 $('#result-section').hide();
                 $('#symptoms-select').val(null).trigger('change');
+            });
+            
+            // Subscription form submission
+            $('#subscribe-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                const email = $('#email-input').val();
+                
+                $.ajax({
+                    url: '/subscribe',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        const messageContainer = $('#subscribe-message');
+                        messageContainer.removeClass('alert-danger').addClass('alert-success');
+                        
+                        if (response.success) {
+                            messageContainer.text(response.success);
+                            $('#email-input').val('');
+                        } else if (response.error) {
+                            messageContainer.text(response.error);
+                            messageContainer.removeClass('alert-success').addClass('alert-danger');
+                        }
+                        
+                        messageContainer.addClass('alert').show();
+                        
+                        // Hide message after 5 seconds
+                        setTimeout(function() {
+                            messageContainer.hide().removeClass('alert alert-success alert-danger');
+                        }, 5000);
+                    },
+                    error: function() {
+                        const messageContainer = $('#subscribe-message');
+                        messageContainer.text('An error occurred. Please try again.');
+                        messageContainer.addClass('alert alert-danger').show();
+                        
+                        // Hide message after 5 seconds
+                        setTimeout(function() {
+                            messageContainer.hide().removeClass('alert alert-danger');
+                        }, 5000);
+                    }
+                });
             });
         });
     </script>
