@@ -1,10 +1,21 @@
 from flask import Flask, render_template, request, jsonify
+from flask_mail import Mail, Message
 import pickle
 import numpy as np
 import pandas as pd
 import re
 
 app = Flask(__name__)
+
+# Configure email settings
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Replace with your email
+app.config['MAIL_PASSWORD'] = 'your-app-password'  # Replace with your app password
+app.config['MAIL_DEFAULT_SENDER'] = 'your-email@gmail.com'  # Replace with your email
+
+mail = Mail(app)
 
 # Load the model and related data
 with open('disease_prediction_model.pkl', 'rb') as f:
@@ -233,6 +244,46 @@ def predict():
         'predictions': results,
         'selected_symptoms': selected_symptoms
     })
+
+@app.route('/subscribe', methods=['POST'])
+def subscribe():
+    email = request.form.get('email')
+    
+    if not email:
+        return jsonify({
+            'error': 'Please provide a valid email address'
+        })
+    
+    try:
+        # Send welcome email with health tips
+        msg = Message('Welcome to MediPredict Nigeria!', recipients=[email])
+        msg.html = '''
+        <h1>Welcome to MediPredict Nigeria!</h1>
+        <p>Thank you for subscribing to our health tips and updates.</p>
+        <p>Here are some important health tips for you:</p>
+        <ul>
+            <li>Wash your hands regularly with soap and water</li>
+            <li>Maintain a balanced diet with plenty of fruits and vegetables</li>
+            <li>Stay hydrated by drinking enough water daily</li>
+            <li>Get regular exercise for at least 30 minutes a day</li>
+            <li>Get enough sleep (7-9 hours per night)</li>
+            <li>Avoid smoking and limit alcohol consumption</li>
+            <li>Practice safe sex</li>
+            <li>Get regular health check-ups</li>
+        </ul>
+        <p>If you have any symptoms, please use our disease prediction tool to get preliminary information.</p>
+        <p>Remember: This tool is not a substitute for professional medical advice.</p>
+        <p>Best regards,<br>The MediPredict Nigeria Team</p>
+        '''
+        mail.send(msg)
+        
+        return jsonify({
+            'success': 'Thank you for subscribing! You will receive health tips in your email.'
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to send email. Please try again. Error: {str(e)}'
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)
