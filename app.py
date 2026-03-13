@@ -1,10 +1,21 @@
 from flask import Flask, render_template, request, jsonify
+from flask_mail import Mail, Message
 import pickle
 import numpy as np
 import pandas as pd
 import re
 
 app = Flask(__name__)
+
+# Configure email settings
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Replace with your email
+app.config['MAIL_PASSWORD'] = 'your-app-password'  # Replace with your app password
+app.config['MAIL_DEFAULT_SENDER'] = 'your-email@gmail.com'  # Replace with your email
+
+mail = Mail(app)
 
 # Load the model and related data
 with open('disease_prediction_model.pkl', 'rb') as f:
