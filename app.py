@@ -201,6 +201,36 @@ def predict_diseases(symptoms_input, top_n=3, confidence_threshold=5.0):
     
     return predictions
 
+def get_popular_symptoms(limit=15):
+    """
+    Get the most popular symptoms from the dataset
+    """
+    symptom_counts = {}
+    
+    # Count symptom occurrences
+    for col in data.columns[1:]:
+        for symptom in data[col]:
+            if symptom != '0':
+                if symptom in symptom_counts:
+                    symptom_counts[symptom] += 1
+                else:
+                    symptom_counts[symptom] = 1
+    
+    # Sort by count descending
+    sorted_symptoms = sorted(symptom_counts.items(), key=lambda x: x[1], reverse=True)
+    
+    # Return top N symptoms
+    return [symptom for symptom, count in sorted_symptoms[:limit]]
+
+@app.route('/popular-symptoms')
+def popular_symptoms():
+    """
+    API endpoint to get popular symptoms
+    """
+    limit = request.args.get('limit', 15, type=int)
+    popular_symptoms_list = get_popular_symptoms(limit)
+    return jsonify({'symptoms': popular_symptoms_list})
+
 def predict_disease(symptoms_input):
     """
     Legacy function that returns only the top prediction.
