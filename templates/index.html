@@ -91,10 +91,24 @@
             justify-content: space-between;
             align-items: center;
         }
-        .symptom-toggle {
+         .symptom-toggle {
             font-size: 0.8rem;
             color: #6c757d;
             cursor: pointer;
+        }
+        .quick-symptom {
+            cursor: pointer;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .quick-symptom:hover {
+            background-color: #e2e3f3 !important;
+            color: #383d8b !important;
+            transform: translateY(-1px);
+        }
+        .quick-symptom:active {
+            transform: translateY(0);
         }
         .other-symptoms-container {
             display: none;
@@ -124,10 +138,19 @@
                     <p class="lead">Leveraging AI for healthcare in Nigeria</p>
                 </div>
 
-                <div class="card mb-4">
+                 <div class="card mb-4">
                     <div class="card-body">
                         <h2 class="card-title">Select Your Symptoms</h2>
                         <p class="card-text">Choose all the symptoms you are experiencing below:</p>
+                        
+                        <!-- Quick Symptom Suggestions -->
+                        <div class="mb-3">
+                            <h6>Quick Symptom Suggestions:</h6>
+                            <div id="quick-symptoms" class="d-flex flex-wrap gap-2 mb-3">
+                                <!-- Quick symptoms will be populated here -->
+                            </div>
+                            <small class="text-muted">Click on a symptom tag to quickly add it to your selection</small>
+                        </div>
                         
                         <form id="prediction-form">
                             <div class="mb-3">
@@ -187,11 +210,88 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <script>
-        $(document).ready(function() {
+         $(document).ready(function() {
             // Initialize Select2 for better multiselect experience
             $('#symptoms-select').select2({
-                placeholder: 'Select symptoms',
-                width: '100%'
+                placeholder: 'Search for symptoms...',
+                width: '100%',
+                theme: 'bootstrap-5',
+                allowClear: true,
+                minimumInputLength: 2,
+                language: {
+                    inputTooShort: function() {
+                        return 'Please enter at least 2 characters';
+                    },
+                    noResults: function() {
+                        return 'No matching symptoms found';
+                    }
+                }
+            });
+            
+            // Fetch and populate quick symptoms from API
+            $.ajax({
+                url: '/popular-symptoms?limit=15',
+                type: 'GET',
+                success: function(response) {
+                    const quickSymptomsContainer = $('#quick-symptoms');
+                    response.symptoms.forEach(function(symptom) {
+                        const formattedSymptom = symptom.replace(/_/g, ' ').title();
+                        const quickSymptomElement = $(`<span class="badge rounded-pill bg-light text-dark cursor-pointer quick-symptom" data-symptom="${symptom}">${formattedSymptom}</span>`);
+                        
+                        quickSymptomElement.on('click', function() {
+                            const symptomValue = $(this).data('symptom');
+                            const select2Element = $('#symptoms-select');
+                            
+                            // Check if this symptom is already selected
+                            const currentValues = select2Element.val() || [];
+                            if (!currentValues.includes(symptomValue)) {
+                                // Add the new option if it doesn't exist
+                                if (select2Element.find(`option[value="${symptomValue}"]`).length === 0) {
+                                    const newOption = new Option(symptomValue.replace(/_/g, ' ').title(), symptomValue, true, true);
+                                    select2Element.append(newOption);
+                                }
+                                
+                                // Add to selection
+                                currentValues.push(symptomValue);
+                                select2Element.val(currentValues).trigger('change');
+                            }
+                        });
+                        
+                        quickSymptomsContainer.append(quickSymptomElement);
+                    });
+                },
+                error: function() {
+                    console.error('Failed to fetch popular symptoms');
+                    // Fallback to hardcoded symptoms if API fails
+                    const fallbackSymptoms = [
+                        'fever', 'cough', 'headache', 'fatigue', 'body_pain', 'sore_throat', 
+                        'difficulty_breathing', 'loss_of_appetite', 'nausea', 'vomiting', 
+                        'diarrhea', 'stomach_pain', 'joint_pain', 'rash', 'itching'
+                    ];
+                    const quickSymptomsContainer = $('#quick-symptoms');
+                    fallbackSymptoms.forEach(function(symptom) {
+                        const formattedSymptom = symptom.replace(/_/g, ' ').title();
+                        const quickSymptomElement = $(`<span class="badge rounded-pill bg-light text-dark cursor-pointer quick-symptom" data-symptom="${symptom}">${formattedSymptom}</span>`);
+                        
+                        quickSymptomElement.on('click', function() {
+                            const symptomValue = $(this).data('symptom');
+                            const select2Element = $('#symptoms-select');
+                            
+                            const currentValues = select2Element.val() || [];
+                            if (!currentValues.includes(symptomValue)) {
+                                if (select2Element.find(`option[value="${symptomValue}"]`).length === 0) {
+                                    const newOption = new Option(symptomValue.replace(/_/g, ' ').title(), symptomValue, true, true);
+                                    select2Element.append(newOption);
+                                }
+                                
+                                currentValues.push(symptomValue);
+                                select2Element.val(currentValues).trigger('change');
+                            }
+                        });
+                        
+                        quickSymptomsContainer.append(quickSymptomElement);
+                    });
+                }
             });
             
             // Form submission
